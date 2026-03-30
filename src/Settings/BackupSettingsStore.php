@@ -30,7 +30,6 @@ class BackupSettingsStore
             'backup-schedule-time',
             'backup-schedule-day-of-week',
             'backup-schedule-day-of-month',
-            'backup-schedule-timezone',
             'backup-schedule-keep-local-copy',
             'backup-schedule-notify-email',
         ]);

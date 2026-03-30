@@ -32,8 +32,6 @@ return [
     'backup_schedule_day_of_week_desc' => 'Used when the weekly schedule is selected.',
     'backup_schedule_day_of_month' => 'Day of month',
     'backup_schedule_day_of_month_desc' => 'Used when the monthly schedule is selected.',
-    'backup_schedule_timezone' => 'Timezone',
-    'backup_schedule_timezone_desc' => 'Timezone used to interpret the saved schedule.',
     'backup_schedule_keep_local_copy' => 'Keep local copy after scheduled backup',
     'backup_schedule_keep_local_copy_desc' => 'Disable only if remote storage is your sole archive destination.',
     'backup_schedule_notify_email' => 'Notification email',

@@ -85,7 +85,7 @@ class BackupServiceProvider extends ServiceProvider
 
             // Render the backup nav item with correct active state
             $selected = $request->is('settings/backups') ? 'backups' : '';
-            $backupItem = view('bookstack-backup::settings.parts.backups-nav-item', ['selected' => $selected])->render();
+            $backupItem = view('bookstack-backup::settings.parts.injected-nav-item', ['selected' => $selected])->render();
 
             // Insert the backup item just before the closing </nav>
             $newContent = substr_replace($content, $backupItem, $navEnd, 0);

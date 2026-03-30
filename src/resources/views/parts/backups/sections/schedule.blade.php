@@ -62,16 +62,6 @@
             </div>
         </div>
 
-        <div class="grid half gap-xl items-center">
-            <div>
-                <label for="setting-backup-schedule-timezone" class="setting-list-label">{{ trans('bookstack-backup::settings.backup_schedule_timezone') }}</label>
-                <p class="small">{{ trans('bookstack-backup::settings.backup_schedule_timezone_desc') }}</p>
-            </div>
-            <div>
-                <input type="text" id="setting-backup-schedule-timezone" name="setting-backup-schedule-timezone" value="{{ setting('backup-schedule-timezone', config('app.timezone', 'UTC')) }}">
-            </div>
-        </div>
-
         <div class="grid half gap-xl">
             <div>
                 <label class="setting-list-label">{{ trans('bookstack-backup::settings.backup_schedule_keep_local_copy') }}</label>

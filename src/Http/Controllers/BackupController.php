@@ -63,7 +63,6 @@ class BackupController extends Controller
             'setting-backup-schedule-time' => ['required', 'date_format:H:i'],
             'setting-backup-schedule-day-of-week' => ['required', 'integer', 'between:0,6'],
             'setting-backup-schedule-day-of-month' => ['required', 'integer', 'between:1,28'],
-            'setting-backup-schedule-timezone' => ['required', 'string', 'max:100'],
             'setting-backup-schedule-keep-local-copy' => ['required', Rule::in(['true', 'false'])],
             'setting-backup-schedule-notify-email' => ['nullable', 'email', 'max:255'],
         ]);
@@ -227,7 +226,8 @@ class BackupController extends Controller
         $this->checkPermission(Permission::SettingsManage);
         $this->setPageTitle(trans('bookstack-backup::settings.history_delete'));
 
-        return view('bookstack-backup::delete-confirm', [
+        
+        return view('bookstack-backup::parts.backups.delete-confirm', [
             'selected' => 'backups',
             'section' => self::SECTION_BACKUP,
             'version' => AppVersion::get(),
@@ -254,9 +254,9 @@ class BackupController extends Controller
     {
         return [
             ['key' => self::SECTION_BACKUP, 'label' => trans('bookstack-backup::settings.menu_backup'), 'url' => url('/settings/backups')],
-            //['key' => self::SECTION_SCHEDULE, 'label' => trans('bookstack-backup::settings.menu_schedule'), 'url' => url('/settings/backups/schedule')],
+            ['key' => self::SECTION_SCHEDULE, 'label' => trans('bookstack-backup::settings.menu_schedule'), 'url' => url('/settings/backups/schedule')],
             ['key' => self::SECTION_BACKUP_SETTINGS, 'label' => trans('bookstack-backup::settings.menu_backup_settings'), 'url' => url('/settings/backups/backup-settings')],
-            //['key' => self::SECTION_REMOTE, 'label' => trans('bookstack-backup::settings.menu_remote'), 'url' => url('/settings/backups/remote')],
+            ['key' => self::SECTION_REMOTE, 'label' => trans('bookstack-backup::settings.menu_remote'), 'url' => url('/settings/backups/remote')],
         ];
     }
 
