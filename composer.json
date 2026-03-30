@@ -1,0 +1,22 @@
+{
+    "name": "arifur/bookstack-backup",
+    "description": "Backup management for Bookstack",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Arifur\\BookstackBackup\\": "src/"
+        }
+    },
+    "extra": {
+    "laravel": {
+            "providers": [
+                "Arifur\\BookstackBackup\\BackupServiceProvider"
+            ]
+        }
+    }
+}
