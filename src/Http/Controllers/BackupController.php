@@ -47,7 +47,6 @@ class BackupController extends Controller
             'setting-backup-filename-prefix' => ['required', 'string', 'max:100'],
             'setting-backup-include-database' => ['required', Rule::in(['true', 'false'])],
             'setting-backup-include-files' => ['required', Rule::in(['true', 'false'])],
-            'setting-backup-remote-upload-on-create' => ['required', Rule::in(['true', 'false'])],
         ]);
 
         return $this->persistSettings(
@@ -81,7 +80,6 @@ class BackupController extends Controller
             'setting-backup-filename-prefix' => ['required', 'string', 'max:100'],
             'setting-backup-include-database' => ['required', Rule::in(['true', 'false'])],
             'setting-backup-include-files' => ['required', Rule::in(['true', 'false'])],
-            'setting-backup-remote-upload-on-create' => ['required', Rule::in(['true', 'false'])],
             'setting-backup-max-backups' => ['required', 'integer', 'between:1,1000'],
         ]);
 
