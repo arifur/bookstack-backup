@@ -46,6 +46,7 @@ class BackupSettingsStore
     {
         $this->storeAllowed($request, [
             'backup-remote-default-provider',
+            'backup-remote-upload-on-create',
             'backup-remote-upload-on-schedule',
             'backup-ftp-enabled',
             'backup-ftp-host',
@@ -54,6 +55,9 @@ class BackupSettingsStore
             'backup-ftp-password',
             'backup-ftp-path',
             'backup-ftp-passive',
+            'backup-google-drive-enabled',
+            'backup-google-drive-access-token',
+            'backup-google-drive-folder-id',
         ]);
     }
 

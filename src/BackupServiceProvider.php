@@ -2,8 +2,10 @@
 
 namespace Arifur\BookstackBackup;
 
+use Arifur\BookstackBackup\Console\Commands\RunScheduledBackupCommand;
 use BookStack\Facades\Theme;
 use BookStack\Theming\ThemeEvents;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,6 +21,20 @@ class BackupServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                RunScheduledBackupCommand::class,
+            ]);
+
+            $this->app->booted(function () {
+                $schedule = $this->app->make(Schedule::class);
+                $schedule->command('bookstack-backup:run-scheduled')->everyMinute()->withoutOverlapping();
+            });
+        }
+
+        // Load package migrations
+        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
+
         // Load views
         $this->loadViewsFrom(__DIR__.'/resources/views', 'bookstack-backup');
 

@@ -13,7 +13,18 @@
                 <select id="setting-backup-remote-default-provider" name="setting-backup-remote-default-provider">
                     <option value="none" @if(setting('backup-remote-default-provider', 'none') === 'none') selected @endif>{{ trans('bookstack-backup::settings.provider_none') }}</option>
                     <option value="ftp" @if(setting('backup-remote-default-provider', 'none') === 'ftp') selected @endif>{{ trans('bookstack-backup::settings.provider_ftp') }}</option>
+                    <option value="google_drive" @if(setting('backup-remote-default-provider', 'none') === 'google_drive') selected @endif>{{ trans('bookstack-backup::settings.provider_google_drive') }}</option>
                 </select>
+            </div>
+        </div>
+
+        <div class="grid half gap-xl">
+            <div>
+                <label class="setting-list-label">{{ trans('bookstack-backup::settings.backup_remote_upload_on_create') }}</label>
+                <p class="small">{{ trans('bookstack-backup::settings.backup_remote_upload_on_create_desc') }}</p>
+            </div>
+            <div>
+                @include('form.toggle-switch', ['name' => 'setting-backup-remote-upload-on-create', 'value' => setting('backup-remote-upload-on-create', false), 'label' => trans('bookstack-backup::settings.backup_remote_upload_on_create')])
             </div>
         </div>
 
@@ -28,6 +39,7 @@
         </div>
 
         @include('bookstack-backup::parts.backups.providers.ftp')
+        @include('bookstack-backup::parts.backups.providers.google-drive')
     </div>
 
     <div class="form-group text-right">
