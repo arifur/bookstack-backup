@@ -105,10 +105,27 @@ You can run scheduled backups using either of these approaches.
 
 ### Option A: Direct Cron Command (Without Laravel Scheduler)
 
-Run the package command directly from cron:
+Run the package command directly from cron. This does not use Laravel scheduler.
+
+Edit crontab:
+
+```bash
+crontab -e
+```
+
+Add this line:
 
 ```
-* * * * * cd /path/to/your/project && php artisan bookstack-backup:run-scheduled >> /dev/null 2>&1
+* * * * * cd /path/to/your/project && /usr/bin/php artisan bookstack-backup:run-scheduled >> /var/log/bookstack-backup-cron.log 2>&1
+```
+
+Use the correct PHP binary path on your server (for example `/usr/bin/php` or `/usr/local/bin/php`).
+
+Quick manual test:
+
+```bash
+cd /path/to/your/project
+/usr/bin/php artisan bookstack-backup:run-scheduled
 ```
 
 ### Option B: Laravel Scheduler

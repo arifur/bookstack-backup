@@ -1,6 +1,10 @@
 <h1 class="list-heading">{{ trans('bookstack-backup::settings.backup_schedule_heading') }}</h1>
 <p class="small text-muted">{{ trans('bookstack-backup::settings.backup_schedule_description') }}</p>
 
+@php
+    $selectedTimezone = (string) setting('backup-schedule-timezone', config('app.timezone', 'UTC'));
+@endphp
+
 <form action="{{ route('backups.schedule.update') }}" method="POST">
     {!! csrf_field() !!}
     <div class="setting-list">
@@ -35,6 +39,20 @@
             </div>
             <div>
                 <input type="time" id="setting-backup-schedule-time" name="setting-backup-schedule-time" value="{{ setting('backup-schedule-time', '02:00') }}">
+            </div>
+        </div>
+
+        <div class="grid half gap-xl items-center">
+            <div>
+                <label for="setting-backup-schedule-timezone" class="setting-list-label">{{ trans('bookstack-backup::settings.backup_schedule_timezone') }}</label>
+                <p class="small">{{ trans('bookstack-backup::settings.backup_schedule_timezone_desc') }}</p>
+            </div>
+            <div>
+                <select id="setting-backup-schedule-timezone" name="setting-backup-schedule-timezone">
+                    @foreach(timezone_identifiers_list() as $timezone)
+                        <option value="{{ $timezone }}" @selected($selectedTimezone === $timezone)>{{ $timezone }}</option>
+                    @endforeach
+                </select>
             </div>
         </div>
 

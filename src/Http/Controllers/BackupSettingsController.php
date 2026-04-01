@@ -37,6 +37,7 @@ class BackupSettingsController extends Controller
             'setting-backup-schedule-enabled' => ['required', Rule::in(['true', 'false'])],
             'setting-backup-schedule-frequency' => ['required', Rule::in(['daily', 'weekly', 'monthly'])],
             'setting-backup-schedule-time' => ['required', 'date_format:H:i'],
+            'setting-backup-schedule-timezone' => ['required', Rule::in(timezone_identifiers_list())],
             'setting-backup-schedule-day-of-week' => ['required', 'integer', 'between:0,6'],
             'setting-backup-schedule-day-of-month' => ['required', 'integer', 'between:1,28'],
             'setting-backup-schedule-keep-local-copy' => ['required', Rule::in(['true', 'false'])],

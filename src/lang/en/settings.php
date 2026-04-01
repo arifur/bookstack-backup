@@ -31,6 +31,8 @@ return [
     'backup_schedule_frequency_desc' => 'Choose how often the scheduled backup should run.',
     'backup_schedule_time' => 'Preferred run time',
     'backup_schedule_time_desc' => 'The time of day when scheduled backups should start.',
+    'backup_schedule_timezone' => 'Timezone',
+    'backup_schedule_timezone_desc' => 'Timezone used to evaluate the scheduled run time.',
     'backup_schedule_day_of_week' => 'Day of week',
     'backup_schedule_day_of_week_desc' => 'Used when the weekly schedule is selected.',
     'backup_schedule_day_of_month' => 'Day of month',

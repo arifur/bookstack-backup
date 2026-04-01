@@ -28,11 +28,16 @@ class BackupSettingsStore
             'backup-schedule-enabled',
             'backup-schedule-frequency',
             'backup-schedule-time',
+            'backup-schedule-timezone',
             'backup-schedule-day-of-week',
             'backup-schedule-day-of-month',
             'backup-schedule-keep-local-copy',
             'backup-schedule-notify-email',
         ]);
+
+        // Reset run markers after schedule updates so the next eligible cron tick can run.
+        $this->settings->put('backup-schedule-last-period-token', '');
+        $this->settings->put('backup-schedule-last-run-at', '');
     }
 
     public function storeBackupSettingsSection(Request $request): void

@@ -6,6 +6,7 @@ use Arifur\BookstackBackup\Services\Backup\BackupCreationService;
 use BookStack\Settings\SettingService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class RunScheduledBackupCommand extends Command
 {
@@ -16,26 +17,49 @@ class RunScheduledBackupCommand extends Command
     public function handle(BackupCreationService $creationService, SettingService $settings): int
     {
         if (!$this->boolSetting('backup-schedule-enabled', false)) {
+            // Log::debug('Scheduled backup skipped: schedule disabled.');
             return self::SUCCESS;
         }
 
-        $now = Carbon::now();
+        $timezone = $this->scheduleTimezone();
+        $now = Carbon::now($timezone);
         $scheduledTime = (string) setting('backup-schedule-time', '02:00');
 
         if (!$this->isScheduledTimeReached($now, $scheduledTime)) {
+            // Log::debug('Scheduled backup skipped: before configured time.', [
+            //     'now' => $now->toDateTimeString(),
+            //     'timezone' => $timezone,
+            //     'scheduled_time' => $scheduledTime,
+            // ]);
             return self::SUCCESS;
         }
 
         $frequency = (string) setting('backup-schedule-frequency', 'daily');
         if (!$this->isDueForFrequency($now, $frequency)) {
+            // Log::debug('Scheduled backup skipped: frequency/day conditions not met.', [
+            //     'now' => $now->toDateTimeString(),
+            //     'frequency' => $frequency,
+            //     'configured_day_of_week' => (int) setting('backup-schedule-day-of-week', 0),
+            //     'configured_day_of_month' => (int) setting('backup-schedule-day-of-month', 1),
+            // ]);
             return self::SUCCESS;
         }
 
         $periodToken = $this->periodToken($now, $frequency);
         $lastPeriodToken = (string) setting('backup-schedule-last-period-token', '');
         if ($lastPeriodToken === $periodToken) {
+            // Log::debug('Scheduled backup skipped: period already processed.', [
+            //     'period_token' => $periodToken,
+            // ]);
             return self::SUCCESS;
         }
+
+        Log::info('Scheduled backup started.', [
+            'period_token' => $periodToken,
+            'frequency' => $frequency,
+            'now' => $now->toDateTimeString(),
+            'timezone' => $timezone,
+        ]);
 
         $remoteConfig = [
             'ftp' => [
@@ -62,12 +86,22 @@ class RunScheduledBackupCommand extends Command
         ], null);
 
         if (!$result['success']) {
+            Log::error('Scheduled backup failed.', [
+                'error_key' => $result['error_key'] ?? 'backup_failed',
+                'period_token' => $periodToken,
+            ]);
             $this->error('Scheduled backup failed: ' . ($result['error_key'] ?? 'backup_failed'));
             return self::FAILURE;
         }
 
         $settings->put('backup-schedule-last-period-token', $periodToken);
         $settings->put('backup-schedule-last-run-at', $now->toDateTimeString());
+
+        Log::info('Scheduled backup completed.', [
+            'period_token' => $periodToken,
+            'completed_at' => $now->toDateTimeString(),
+            'timezone' => $timezone,
+        ]);
 
         $this->info('Scheduled backup completed.');
 
@@ -129,6 +163,15 @@ class RunScheduledBackupCommand extends Command
         }
 
         return in_array($value, ['true', '1', 1, true], true);
+    }
+
+    private function scheduleTimezone(): string
+    {
+        $timezone = (string) setting('backup-schedule-timezone', config('app.timezone', 'UTC'));
+
+        return in_array($timezone, timezone_identifiers_list(), true)
+            ? $timezone
+            : (string) config('app.timezone', 'UTC');
     }
 
     /**
