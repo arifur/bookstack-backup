@@ -22,7 +22,7 @@ class RunScheduledBackupCommand extends Command
         $now = Carbon::now();
         $scheduledTime = (string) setting('backup-schedule-time', '02:00');
 
-        if ($now->format('H:i') !== $scheduledTime) {
+        if (!$this->isScheduledTimeReached($now, $scheduledTime)) {
             return self::SUCCESS;
         }
 
@@ -100,6 +100,24 @@ class RunScheduledBackupCommand extends Command
         }
 
         return $now->format('Y-m-d');
+    }
+
+    private function isScheduledTimeReached(Carbon $now, string $scheduledTime): bool
+    {
+        $parts = explode(':', $scheduledTime);
+        if (count($parts) !== 2) {
+            return false;
+        }
+
+        $hour = (int) $parts[0];
+        $minute = (int) $parts[1];
+        if ($hour < 0 || $hour > 23 || $minute < 0 || $minute > 59) {
+            return false;
+        }
+
+        $scheduledAt = $now->copy()->setTime($hour, $minute);
+
+        return $now->greaterThanOrEqualTo($scheduledAt);
     }
 
     private function boolSetting(string $key, bool $default = false): bool
