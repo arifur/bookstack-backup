@@ -4,9 +4,7 @@ namespace Arifur\BookstackBackup\Services\Backup;
 
 use FTP\Connection;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Throwable;
 
 class BackupRemoteUploadService
@@ -18,18 +16,13 @@ class BackupRemoteUploadService
 
     /**
      * @param array{
-     *   ftp: array{enabled: bool, host: string, port: int, username: string, password: string, path: string, passive: bool},
-     *   google_drive: array{enabled: bool, access_token: string, folder_id: string}
+     *   ftp: array{enabled: bool, host: string, port: int, username: string, password: string, path: string, passive: bool}
      * } $config
      */
-    public function uploadBackupToRemote(string $localFilePath, string $filename, string $provider, array $config, ?string $progressToken = null): bool
+    public function uploadBackupToRemote(string $localFilePath, string $filename, string $provider, array $config, ?string $progressToken = null, int $providerIndex = 0, int $providerCount = 1): bool
     {
         if ($provider === 'ftp') {
-            return $this->uploadBackupToFtp($localFilePath, $filename, $config['ftp'], $progressToken);
-        }
-
-        if ($provider === 'google_drive') {
-            return $this->uploadBackupToGoogleDrive($localFilePath, $filename, $config['google_drive'], $progressToken);
+            return $this->uploadBackupToFtp($localFilePath, $filename, $config['ftp'], $progressToken, $providerIndex, $providerCount);
         }
 
         return false;
@@ -38,7 +31,7 @@ class BackupRemoteUploadService
     /**
      * @param array{enabled: bool, host: string, port: int, username: string, password: string, path: string, passive: bool} $config
      */
-    private function uploadBackupToFtp(string $localFilePath, string $filename, array $config, ?string $progressToken = null): bool
+    private function uploadBackupToFtp(string $localFilePath, string $filename, array $config, ?string $progressToken = null, int $providerIndex = 0, int $providerCount = 1): bool
     {
         if (!File::exists($localFilePath) || !$config['enabled']) {
             return false;
@@ -130,16 +123,14 @@ class BackupRemoteUploadService
                     return false;
                 }
 
-                if ($progressToken !== null) {
-                    $this->progressService->update($progressToken, 45, 'Uploading backup to FTP', 'uploading');
-                }
+                $this->updateUploadProgress($progressToken, $providerIndex, $providerCount, 0.0, $this->uploadingMessage('FTP', $providerIndex, $providerCount));
 
                 $status = @ftp_nb_fput($connection, $remoteFilePath, $stream, FTP_BINARY);
                 while ($status === FTP_MOREDATA) {
                     $bytesTransferred = ftell($stream);
                     if ($progressToken !== null && $bytesTransferred !== false) {
-                        $uploadPercent = $fileSize > 0 ? (int) floor(($bytesTransferred / $fileSize) * 50) : 50;
-                        $this->progressService->update($progressToken, min(95, 45 + $uploadPercent), 'Uploading backup to FTP', 'uploading');
+                        $uploadRatio = $fileSize > 0 ? ($bytesTransferred / $fileSize) : 1.0;
+                        $this->updateUploadProgress($progressToken, $providerIndex, $providerCount, $uploadRatio, $this->uploadingMessage('FTP', $providerIndex, $providerCount));
                     }
 
                     $status = @ftp_nb_continue($connection);
@@ -160,6 +151,7 @@ class BackupRemoteUploadService
             }
 
             Log::info('Backup uploaded to FTP successfully.', ['remote_path' => $remoteFilePath]);
+            $this->updateUploadProgress($progressToken, $providerIndex, $providerCount, 1.0, $this->uploadingMessage('FTP', $providerIndex, $providerCount));
             return true;
         } catch (Throwable $exception) {
             Log::error('FTP upload failed with exception.', [
@@ -202,87 +194,42 @@ class BackupRemoteUploadService
         return true;
     }
 
-    /**
-     * @param array{enabled: bool, access_token: string, folder_id: string} $config
-     */
-    private function uploadBackupToGoogleDrive(string $localFilePath, string $filename, array $config, ?string $progressToken = null): bool
+    private function updateUploadProgress(?string $progressToken, int $providerIndex, int $providerCount, float $ratio, string $message): void
     {
-        if (!File::exists($localFilePath) || !$config['enabled']) {
-            return false;
+        if ($progressToken === null) {
+            return;
         }
 
-        if ($config['access_token'] === '') {
-            Log::warning('Google Drive upload skipped due to missing access token.');
-            return false;
+        [$startPercent, $endPercent] = $this->progressRangeForProvider($providerIndex, $providerCount);
+        $clampedRatio = max(0.0, min(1.0, $ratio));
+        $percent = (int) round($startPercent + (($endPercent - $startPercent) * $clampedRatio));
+
+        $this->progressService->update($progressToken, $percent, $message, 'uploading');
+    }
+
+    /**
+     * @return array{0:int,1:int}
+     */
+    private function progressRangeForProvider(int $providerIndex, int $providerCount): array
+    {
+        $overallStart = 45;
+        $overallEnd = 90;
+        $count = max(1, $providerCount);
+        $slotSize = ($overallEnd - $overallStart) / $count;
+        $startPercent = (int) round($overallStart + ($slotSize * max(0, $providerIndex)));
+        $endPercent = $providerIndex >= ($count - 1)
+            ? $overallEnd
+            : (int) round($overallStart + ($slotSize * max(0, $providerIndex + 1)));
+
+        return [$startPercent, max($startPercent, $endPercent)];
+    }
+
+    private function uploadingMessage(string $providerLabel, int $providerIndex, int $providerCount): string
+    {
+        if ($providerCount <= 1) {
+            return 'Uploading backup to ' . $providerLabel;
         }
 
-        if ($progressToken !== null) {
-            $this->progressService->update($progressToken, 55, 'Uploading backup to Google Drive', 'uploading');
-        }
-
-        $metadata = [
-            'name' => $filename,
-        ];
-
-        if ($config['folder_id'] !== '') {
-            $metadata['parents'] = [$config['folder_id']];
-        }
-
-        $fileContent = File::get($localFilePath);
-        $mimeType = File::mimeType($localFilePath) ?: 'application/zip';
-        $boundary = 'bookstack-backup-' . Str::random(24);
-        $lineBreak = "\r\n";
-
-        $body = '';
-        $body .= '--' . $boundary . $lineBreak;
-        $body .= 'Content-Type: application/json; charset=UTF-8' . $lineBreak . $lineBreak;
-        $body .= json_encode($metadata, JSON_UNESCAPED_SLASHES) . $lineBreak;
-        $body .= '--' . $boundary . $lineBreak;
-        $body .= 'Content-Type: ' . $mimeType . $lineBreak . $lineBreak;
-        $body .= $fileContent . $lineBreak;
-        $body .= '--' . $boundary . '--';
-
-        try {
-            /** @var \Illuminate\Http\Client\Response $response */
-            $response = Http::withToken($config['access_token'])
-                ->withHeaders([
-                    'Content-Type' => 'multipart/related; boundary=' . $boundary,
-                ])
-                ->withBody($body, 'multipart/related; boundary=' . $boundary)
-                ->post('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name');
-
-            if (!$response->successful()) {
-                Log::error('Google Drive upload failed.', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
-                if ($progressToken !== null) {
-                    $this->progressService->fail($progressToken, 'Google Drive upload failed');
-                }
-
-                return false;
-            }
-
-            if ($progressToken !== null) {
-                $this->progressService->update($progressToken, 90, 'Finishing Google Drive upload', 'uploading');
-            }
-
-            Log::info('Backup uploaded to Google Drive successfully.', [
-                'response' => $response->json(),
-            ]);
-
-            return true;
-        } catch (Throwable $exception) {
-            Log::error('Google Drive upload failed with exception.', [
-                'message' => $exception->getMessage(),
-            ]);
-
-            if ($progressToken !== null) {
-                $this->progressService->fail($progressToken, 'Google Drive upload failed');
-            }
-
-            return false;
-        }
+        return 'Uploading backup to ' . $providerLabel . ' (' . ($providerIndex + 1) . '/' . $providerCount . ')';
     }
 }

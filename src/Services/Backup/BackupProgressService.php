@@ -9,13 +9,15 @@ class BackupProgressService
     private const CACHE_PREFIX = 'bookstack-backup-progress:';
     private const TTL_SECONDS = 1800;
 
-    public function start(string $token, string $provider): void
+    public function start(string $token, array|string $provider): void
     {
+        $providerValue = is_array($provider) ? implode(',', $provider) : $provider;
+
         $this->store($token, [
             'status' => 'preparing',
             'percent' => 0,
             'message' => 'Preparing backup',
-            'provider' => $provider,
+            'provider' => $providerValue,
             'complete' => false,
             'success' => false,
         ]);

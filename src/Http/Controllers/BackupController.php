@@ -56,11 +56,23 @@ class BackupController extends Controller
     public function create(Request $request): RedirectResponse|JsonResponse
     {
         $progressToken = $request->string('progress_token')->toString();
-        $remoteUploadEnabled = $this->boolSetting('backup-remote-upload-on-create', false);
-        $remoteProvider = (string) $this->setting('backup-remote-default-provider', 'none');
+        $remoteUploadEnabled = $this->boolSetting('backup-remote-enabled', true)
+            && $this->boolSetting('backup-remote-upload-on-create', false);
+        $remoteConfig = [
+            'ftp' => [
+                'enabled' => $this->boolSetting('backup-ftp-enabled', false),
+                'host' => (string) $this->setting('backup-ftp-host', ''),
+                'port' => (int) $this->setting('backup-ftp-port', 21),
+                'username' => (string) $this->setting('backup-ftp-username', ''),
+                'password' => (string) $this->setting('backup-ftp-password', ''),
+                'path' => (string) $this->setting('backup-ftp-path', '/'),
+                'passive' => true,
+            ],
+        ];
+        $remoteProviders = $this->enabledRemoteProviders($remoteConfig);
 
-        if ($progressToken !== '' && $remoteUploadEnabled && $remoteProvider !== 'none') {
-            $this->progressService->start($progressToken, $remoteProvider);
+        if ($progressToken !== '' && $remoteUploadEnabled && count($remoteProviders) > 0) {
+            $this->progressService->start($progressToken, $remoteProviders);
         }
 
         $result = $this->creationService->createBackup([
@@ -69,24 +81,9 @@ class BackupController extends Controller
             'include_database' => $this->boolSetting('backup-include-database', true),
             'include_files' => $this->boolSetting('backup-include-files', true),
             'remote_upload_on_create' => $remoteUploadEnabled,
-            'remote_default_provider' => $remoteProvider,
+            'remote_providers' => $remoteProviders,
             'progress_token' => $progressToken !== '' ? $progressToken : null,
-            'remote' => [
-                'ftp' => [
-                    'enabled' => $this->boolSetting('backup-ftp-enabled', false),
-                    'host' => (string) $this->setting('backup-ftp-host', ''),
-                    'port' => (int) $this->setting('backup-ftp-port', 21),
-                    'username' => (string) $this->setting('backup-ftp-username', ''),
-                    'password' => (string) $this->setting('backup-ftp-password', ''),
-                    'path' => (string) $this->setting('backup-ftp-path', '/'),
-                    'passive' => $this->boolSetting('backup-ftp-passive', true),
-                ],
-                'google_drive' => [
-                    'enabled' => $this->boolSetting('backup-google-drive-enabled', false),
-                    'access_token' => (string) $this->setting('backup-google-drive-access-token', ''),
-                    'folder_id' => (string) $this->setting('backup-google-drive-folder-id', ''),
-                ],
-            ],
+            'remote' => $remoteConfig,
             'max_backups' => (int) setting('backup-max-backups', config('backups.max_backups', 10)),
         ], Auth::id());
 
@@ -212,6 +209,22 @@ class BackupController extends Controller
         }
 
         return in_array($value, ['true', '1', 1, true], true);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function enabledRemoteProviders(array $remoteConfig): array
+    {
+        $providers = [];
+
+        foreach ($remoteConfig as $provider => $config) {
+            if (is_string($provider) && is_array($config) && !empty($config['enabled'])) {
+                $providers[] = $provider;
+            }
+        }
+
+        return $providers;
     }
 
     /**

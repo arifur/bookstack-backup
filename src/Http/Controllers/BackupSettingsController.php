@@ -71,7 +71,7 @@ class BackupSettingsController extends Controller
     public function updateRemoteSettings(Request $request, BackupSettingsStore $settingsStore): RedirectResponse
     {
         $this->validate($request, [
-            'setting-backup-remote-default-provider' => ['required', Rule::in(['none', 'ftp', 'google_drive'])],
+            'setting-backup-remote-enabled' => ['required', Rule::in(['true', 'false'])],
             'setting-backup-remote-upload-on-create' => ['required', Rule::in(['true', 'false'])],
             'setting-backup-remote-upload-on-schedule' => ['required', Rule::in(['true', 'false'])],
             'setting-backup-ftp-enabled' => ['required', Rule::in(['true', 'false'])],
@@ -80,10 +80,6 @@ class BackupSettingsController extends Controller
             'setting-backup-ftp-username' => ['nullable', 'string', 'max:255'],
             'setting-backup-ftp-password' => ['nullable', 'string', 'max:255'],
             'setting-backup-ftp-path' => ['nullable', 'string', 'max:255'],
-            'setting-backup-ftp-passive' => ['required', Rule::in(['true', 'false'])],
-            'setting-backup-google-drive-enabled' => ['required', Rule::in(['true', 'false'])],
-            'setting-backup-google-drive-access-token' => ['nullable', 'string', 'max:4096'],
-            'setting-backup-google-drive-folder-id' => ['nullable', 'string', 'max:255'],
         ]);
 
         return $this->persistSettings(

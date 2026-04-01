@@ -72,6 +72,7 @@
             </div>
         </div>
 
+        {{--
         <div class="grid half gap-xl items-center">
             <div>
                 <label for="setting-backup-schedule-notify-email" class="setting-list-label">{{ trans('bookstack-backup::settings.backup_schedule_notify_email') }}</label>
@@ -81,6 +82,7 @@
                 <input type="email" id="setting-backup-schedule-notify-email" name="setting-backup-schedule-notify-email" value="{{ setting('backup-schedule-notify-email', '') }}">
             </div>
         </div>
+        --}}
     </div>
 
     <div class="form-group text-right">

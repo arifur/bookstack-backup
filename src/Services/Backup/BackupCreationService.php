@@ -24,12 +24,11 @@ class BackupCreationService
      *   include_database: bool,
      *   include_files: bool,
      *   remote_upload_on_create: bool,
-     *   remote_default_provider: string,
-        *   progress_token?: string,
-    *   remote: array{
-    *     ftp: array{enabled: bool, host: string, port: int, username: string, password: string, path: string, passive: bool},
-    *     google_drive: array{enabled: bool, access_token: string, folder_id: string}
-    *   },
+     *   remote_providers: array<int, string>,
+     *   progress_token?: string,
+     *   remote: array{
+     *     ftp: array{enabled: bool, host: string, port: int, username: string, password: string, path: string, passive: bool}
+     *   },
      *   max_backups: int
      * } $options
      * @return array{success: bool, error_key?: string}
@@ -130,25 +129,31 @@ class BackupCreationService
             return ['success' => false, 'error_key' => 'backup_validation_failed'];
         }
 
-        if ($options['remote_upload_on_create'] && $options['remote_default_provider'] !== 'none') {
+        $remoteProviders = array_values(array_filter($options['remote_providers'] ?? [], fn (mixed $provider): bool => is_string($provider) && $provider !== ''));
+
+        if ($options['remote_upload_on_create'] && count($remoteProviders) > 0) {
             if ($progressToken !== null) {
                 $this->progressService->update($progressToken, 45, 'Uploading backup', 'uploading');
             }
 
-            $uploaded = $this->remoteUploadService->uploadBackupToRemote(
-                $zipFilePath,
-                $filename,
-                $options['remote_default_provider'],
-                $options['remote'],
-                $progressToken
-            );
+            foreach ($remoteProviders as $index => $provider) {
+                $uploaded = $this->remoteUploadService->uploadBackupToRemote(
+                    $zipFilePath,
+                    $filename,
+                    $provider,
+                    $options['remote'],
+                    $progressToken,
+                    $index,
+                    count($remoteProviders)
+                );
 
-            if (!$uploaded) {
-                if ($progressToken !== null) {
-                    $this->progressService->fail($progressToken, 'Remote upload failed');
+                if (!$uploaded) {
+                    if ($progressToken !== null) {
+                        $this->progressService->fail($progressToken, 'Remote upload failed');
+                    }
+
+                    return ['success' => false, 'error_key' => 'backup_remote_upload_failed'];
                 }
-
-                return ['success' => false, 'error_key' => 'backup_remote_upload_failed'];
             }
         }
 

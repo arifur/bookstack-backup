@@ -4,17 +4,13 @@
 <form action="{{ route('backups.remote.update') }}" method="POST">
     {!! csrf_field() !!}
     <div class="setting-list">
-        <div class="grid half gap-xl items-center">
+        <div class="grid half gap-xl">
             <div>
-                <label for="setting-backup-remote-default-provider" class="setting-list-label">{{ trans('bookstack-backup::settings.backup_remote_default_provider') }}</label>
-                <p class="small">{{ trans('bookstack-backup::settings.backup_remote_default_provider_desc') }}</p>
+                <label class="setting-list-label">{{ trans('bookstack-backup::settings.backup_remote_enabled') }}</label>
+                <p class="small">{{ trans('bookstack-backup::settings.backup_remote_enabled_desc') }}</p>
             </div>
             <div>
-                <select id="setting-backup-remote-default-provider" name="setting-backup-remote-default-provider">
-                    <option value="none" @if(setting('backup-remote-default-provider', 'none') === 'none') selected @endif>{{ trans('bookstack-backup::settings.provider_none') }}</option>
-                    <option value="ftp" @if(setting('backup-remote-default-provider', 'none') === 'ftp') selected @endif>{{ trans('bookstack-backup::settings.provider_ftp') }}</option>
-                    <option value="google_drive" @if(setting('backup-remote-default-provider', 'none') === 'google_drive') selected @endif>{{ trans('bookstack-backup::settings.provider_google_drive') }}</option>
-                </select>
+                @include('form.toggle-switch', ['name' => 'setting-backup-remote-enabled', 'value' => setting('backup-remote-enabled', true), 'label' => trans('bookstack-backup::settings.backup_remote_enabled')])
             </div>
         </div>
 
@@ -39,7 +35,6 @@
         </div>
 
         @include('bookstack-backup::parts.backups.providers.ftp')
-        @include('bookstack-backup::parts.backups.providers.google-drive')
     </div>
 
     <div class="form-group text-right">

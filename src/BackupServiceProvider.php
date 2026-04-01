@@ -52,6 +52,11 @@ class BackupServiceProvider extends ServiceProvider
             __DIR__.'/../config/backups.php' => config_path('backups.php'),
         ], 'bookstack-backup-config');
 
+        // Publish migrations
+        $this->publishes([
+            __DIR__.'/database/migrations' => database_path('migrations'),
+        ], 'bookstack-backup-migrations');
+
         // Publish views
         $this->publishes([
             __DIR__.'/resources/views' => resource_path('views/vendor/bookstack-backup'),

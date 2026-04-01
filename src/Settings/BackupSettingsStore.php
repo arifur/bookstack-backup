@@ -45,7 +45,7 @@ class BackupSettingsStore
     public function storeRemoteSettings(Request $request): void
     {
         $this->storeAllowed($request, [
-            'backup-remote-default-provider',
+            'backup-remote-enabled',
             'backup-remote-upload-on-create',
             'backup-remote-upload-on-schedule',
             'backup-ftp-enabled',
@@ -54,11 +54,9 @@ class BackupSettingsStore
             'backup-ftp-username',
             'backup-ftp-password',
             'backup-ftp-path',
-            'backup-ftp-passive',
-            'backup-google-drive-enabled',
-            'backup-google-drive-access-token',
-            'backup-google-drive-folder-id',
         ]);
+
+        $this->settings->put('backup-ftp-passive', 'true');
     }
 
     protected function storeAllowed(Request $request, array $keys): void

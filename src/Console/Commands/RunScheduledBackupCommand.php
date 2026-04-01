@@ -37,29 +37,27 @@ class RunScheduledBackupCommand extends Command
             return self::SUCCESS;
         }
 
+        $remoteConfig = [
+            'ftp' => [
+                'enabled' => $this->boolSetting('backup-ftp-enabled', false),
+                'host' => (string) setting('backup-ftp-host', ''),
+                'port' => (int) setting('backup-ftp-port', 21),
+                'username' => (string) setting('backup-ftp-username', ''),
+                'password' => (string) setting('backup-ftp-password', ''),
+                'path' => (string) setting('backup-ftp-path', '/'),
+                'passive' => true,
+            ],
+        ];
+
         $result = $creationService->createBackup([
             'filename_prefix' => (string) setting('backup-filename-prefix', 'bookstack_backup'),
             'storage_path' => (string) config('backups.storage_path'),
             'include_database' => $this->boolSetting('backup-include-database', true),
             'include_files' => $this->boolSetting('backup-include-files', true),
-            'remote_upload_on_create' => $this->boolSetting('backup-remote-upload-on-schedule', false),
-            'remote_default_provider' => (string) setting('backup-remote-default-provider', 'none'),
-            'remote' => [
-                'ftp' => [
-                    'enabled' => $this->boolSetting('backup-ftp-enabled', false),
-                    'host' => (string) setting('backup-ftp-host', ''),
-                    'port' => (int) setting('backup-ftp-port', 21),
-                    'username' => (string) setting('backup-ftp-username', ''),
-                    'password' => (string) setting('backup-ftp-password', ''),
-                    'path' => (string) setting('backup-ftp-path', '/'),
-                    'passive' => $this->boolSetting('backup-ftp-passive', true),
-                ],
-                'google_drive' => [
-                    'enabled' => $this->boolSetting('backup-google-drive-enabled', false),
-                    'access_token' => (string) setting('backup-google-drive-access-token', ''),
-                    'folder_id' => (string) setting('backup-google-drive-folder-id', ''),
-                ],
-            ],
+            'remote_upload_on_create' => $this->boolSetting('backup-remote-enabled', true)
+                && $this->boolSetting('backup-remote-upload-on-schedule', false),
+            'remote_providers' => $this->enabledRemoteProviders($remoteConfig),
+            'remote' => $remoteConfig,
             'max_backups' => (int) setting('backup-max-backups', config('backups.max_backups', 10)),
         ], null);
 
@@ -113,5 +111,21 @@ class RunScheduledBackupCommand extends Command
         }
 
         return in_array($value, ['true', '1', 1, true], true);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function enabledRemoteProviders(array $remoteConfig): array
+    {
+        $providers = [];
+
+        foreach ($remoteConfig as $provider => $config) {
+            if (is_string($provider) && is_array($config) && !empty($config['enabled'])) {
+                $providers[] = $provider;
+            }
+        }
+
+        return $providers;
     }
 }

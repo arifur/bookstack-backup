@@ -11,7 +11,7 @@ This package adds a Backups area under settings and provides:
 - Delete confirmation page before file removal
 - Backup settings for filename prefix, database include toggle, and max backups
 - Automatic pruning by max backup count
-- FTP-only remote settings support in backend and views
+- FTP remote upload settings for manual and scheduled backups
 
 Access is protected by the settings-manage permission.
 
@@ -35,8 +35,17 @@ Then run:
 
 ```bash
 composer update
+php artisan package:discover
 php artisan cache:clear
 php artisan view:clear
+php artisan migrate
+```
+
+If you prefer publishing package migrations first:
+
+```bash
+php artisan vendor:publish --provider="Arifur\\BookstackBackup\\BackupServiceProvider" --tag="bookstack-backup-migrations"
+php artisan migrate
 ```
 
 ## Configuration
@@ -77,6 +86,88 @@ All routes are registered by the package and use middleware web, auth, and can:s
 
 Note: Current sidebar navigation shows Backup and Backup Settings. Schedule and Remote routes exist but are not shown in the sidebar by default.
 
+## Features
+
+- Manual backup creation (database and/or uploads)
+- Backup history with download, hash, and delete
+- Delete confirmation page before file removal
+- Backup settings for filename prefix, database include toggle, and max backups
+- Automatic pruning by max backup count
+- FTP remote upload for manual and scheduled backups
+- **Enable Remote Backup**: master toggle to globally enable/disable all remote uploads
+- Remote upload progress indicator on manual backup
+- Schedule backups via UI (requires cron or Laravel scheduler)
+- Notification email field is currently disabled in the UI
+
+## Running Scheduled Backups
+
+You can run scheduled backups using either of these approaches.
+
+### Option A: Direct Cron Command (Without Laravel Scheduler)
+
+Run the package command directly from cron:
+
+```
+* * * * * cd /path/to/your/project && php artisan bookstack-backup:run-scheduled >> /dev/null 2>&1
+```
+
+### Option B: Laravel Scheduler
+
+Run Laravel's scheduler from cron, then let the app invoke the package schedule:
+
+```
+* * * * * cd /path/to/your/project && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Replace `/path/to/your/project` with your BookStack project root (where `artisan` is located).
+
+## Configuring Scheduled Backups
+
+To set up and configure scheduled backups:
+
+1. **Install and publish the package config (if not already done):**
+
+   ```bash
+   composer update
+   php artisan vendor:publish --tag="bookstack-backup-config"
+   php artisan cache:clear
+   php artisan view:clear
+   ```
+
+2. **Configure your backup schedule in the BookStack UI:**
+   - Go to **Settings → Backups → Schedule**.
+   - Enable scheduled backups using the toggle.
+   - Set your preferred schedule:
+     - **Frequency**: Choose daily, weekly, or monthly.
+     - **Time**: Set the time of day for the backup to run.
+     - **Day of Week**: (If weekly) Select which day backups should run.
+     - **Day of Month**: (If monthly) Select which day backups should run.
+   - (Optional) Toggle whether to keep a local copy after remote upload.
+   - Save your changes.
+
+3. **Set up one of the scheduler execution options:**
+
+   Edit your crontab:
+   ```bash
+   crontab -e
+   ```
+
+    Option A (direct package command):
+    ```
+    * * * * * cd /path/to/your/project && php artisan bookstack-backup:run-scheduled >> /dev/null 2>&1
+    ```
+
+    Option B (Laravel scheduler):
+    ```
+    * * * * * cd /path/to/your/project && php artisan schedule:run >> /dev/null 2>&1
+    ```
+
+    Both options should run every minute.
+
+**Note:**
+- Use one scheduler execution option to avoid duplicate runs.
+- The notification email field is currently disabled in the UI.
+
 ## Notes
 
 - Backups are created as zip files.
@@ -96,6 +187,12 @@ Package not appearing:
 1. Run composer update.
 2. Clear view and app caches.
 3. Check logs in storage/logs.
+
+Migrations not applied:
+
+1. Run `php artisan package:discover`.
+2. Run `php artisan migrate`.
+3. If needed, publish migrations with `php artisan vendor:publish --provider="Arifur\\BookstackBackup\\BackupServiceProvider" --tag="bookstack-backup-migrations"` then run `php artisan migrate` again.
 
 ## Publishing Assets
 

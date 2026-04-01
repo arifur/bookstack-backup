@@ -48,11 +48,3 @@
         <input type="text" id="setting-backup-ftp-path" name="setting-backup-ftp-path" value="{{ setting('backup-ftp-path', '/') }}">
     </div>
 </div>
-<div class="grid half gap-xl">
-    <div>
-        <label class="setting-list-label">{{ trans('bookstack-backup::settings.ftp_passive') }}</label>
-    </div>
-    <div>
-        @include('form.toggle-switch', ['name' => 'setting-backup-ftp-passive', 'value' => setting('backup-ftp-passive', true), 'label' => trans('bookstack-backup::settings.ftp_passive')])
-    </div>
-</div>

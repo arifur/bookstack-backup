@@ -2,9 +2,10 @@
 <p class="small text-muted">{{ trans('bookstack-backup::settings.backup_description') }}</p>
 
 @php
+    $remoteEnabled = in_array(setting('backup-remote-enabled', true), [true, 'true', 1, '1'], true);
     $remoteUploadOnCreate = in_array(setting('backup-remote-upload-on-create', false), [true, 'true', 1, '1'], true);
-    $remoteProvider = (string) setting('backup-remote-default-provider', 'none');
-    $remoteProgressEnabled = $remoteUploadOnCreate && $remoteProvider !== 'none';
+    $ftpEnabled = in_array(setting('backup-ftp-enabled', false), [true, 'true', 1, '1'], true);
+    $remoteProgressEnabled = $remoteEnabled && $remoteUploadOnCreate && $ftpEnabled;
 @endphp
 
 <div class="grid half gap-xl mt-l mb-xl">
@@ -12,7 +13,7 @@
         <p class="small text-muted mb-none">{{ trans('bookstack-backup::settings.backup_create') }}</p>
     </div>
     <div class="text-right">
-        <form action="{{ route('backups.create') }}" method="POST" data-backup-create-form data-remote-progress-enabled="{{ $remoteProgressEnabled ? 'true' : 'false' }}" data-remote-provider="{{ $remoteProvider }}" data-progress-url-template="{{ route('backups.create-progress', ['token' => '__TOKEN__']) }}" data-redirect-url="{{ url('/settings/backups') }}">
+        <form action="{{ route('backups.create') }}" method="POST" data-backup-create-form data-remote-progress-enabled="{{ $remoteProgressEnabled ? 'true' : 'false' }}" data-progress-url-template="{{ route('backups.create-progress', ['token' => '__TOKEN__']) }}" data-redirect-url="{{ url('/settings/backups') }}">
             {!! csrf_field() !!}
             <div class="backup-create-actions">
                 <div class="backup-remote-progress hidden" data-backup-progress aria-live="polite" aria-hidden="true">
